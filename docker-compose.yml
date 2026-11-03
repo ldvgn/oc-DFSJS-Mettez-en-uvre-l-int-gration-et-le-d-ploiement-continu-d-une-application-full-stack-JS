@@ -1,5 +1,6 @@
 services:
   server:
+    image: ghcr.io/ldvgn/orion-server:latest
     build: ./server
     init: true # stops the container immediately on Ctrl+C / docker compose down
     environment:
@@ -11,6 +12,7 @@ services:
       - db-data:/app/prisma/data # keeps the SQLite database between restarts
 
   client:
+    image: ghcr.io/ldvgn/orion-client:latest
     build: ./client
     ports:
       - "4200:80"
