@@ -1,0 +1,21 @@
+services:
+  server:
+    build: ./server
+    init: true # stops the container immediately on Ctrl+C / docker compose down
+    environment:
+      DATABASE_URL: file:./data/orion.db
+      NODE_ENV: production
+    ports:
+      - "8080:8080"
+    volumes:
+      - db-data:/app/prisma/data # keeps the SQLite database between restarts
+
+  client:
+    build: ./client
+    ports:
+      - "4200:80"
+    depends_on:
+      - server
+
+volumes:
+  db-data:

@@ -1,24 +1,21 @@
-# Basic Dockerfile for backend
-# Note: This is a basic version. Students should optimize it with:
-# - Multi-stage builds
-# - Smaller base images (alpine)
-# - Security best practices
-# - Layer optimization
-
-FROM node:22
-
+# Stage 1: build (compile TypeScript to JavaScript)
+FROM node:22-alpine AS builder
 WORKDIR /app
-
 COPY package*.json ./
-
-RUN npm install
-
+RUN npm ci
 COPY . .
-
 RUN npx prisma generate
-
 RUN npm run build
 
+# Stage 2: run (production dependencies + compiled code only)
+FROM node:22-alpine
+# Prisma needs OpenSSL, not included in Alpine
+RUN apk add --no-cache openssl
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci --omit=dev
+COPY prisma ./prisma
+COPY --from=builder /app/dist ./dist
+RUN npx prisma generate
 EXPOSE 8080
-
-CMD ["npm", "start"]
+CMD ["sh", "-c", "npx prisma migrate deploy && exec node dist/index.js"]
