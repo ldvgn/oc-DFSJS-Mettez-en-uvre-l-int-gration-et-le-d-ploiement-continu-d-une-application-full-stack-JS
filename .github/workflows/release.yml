@@ -1,0 +1,48 @@
+# Creates a versioned GitHub release with semantic-release, after the CI succeeds on main
+name: Release
+
+on:
+  workflow_run:
+    workflows: ["Node.js CI"]
+    types: [completed]
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    if: github.event.workflow_run.conclusion == 'success' # only if the CI passed
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # needed to create the tag and the release
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0 # full history and tags, needed to compute the next version
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
+      - name: Build server
+        working-directory: server
+        run: |
+          npm ci
+          npx prisma generate
+          npm run build
+      - name: Build client
+        working-directory: client
+        run: |
+          npm ci
+          npm run build
+
+      - name: Package build artifacts
+        run: |
+          tar -czf orion-server.tar.gz -C server dist package.json package-lock.json prisma
+          tar -czf orion-client.tar.gz -C client/dist .
+
+      - name: Semantic release
+        run: npx semantic-release@25.0.9 --dry-run
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

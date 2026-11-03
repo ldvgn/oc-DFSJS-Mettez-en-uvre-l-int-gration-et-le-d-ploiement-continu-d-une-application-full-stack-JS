@@ -1,0 +1,27 @@
+{
+  "branches": ["main"],
+  "plugins": [
+    "@semantic-release/commit-analyzer",
+    "@semantic-release/release-notes-generator",
+    [
+      "@semantic-release/github",
+      {
+        "assets": [
+          {
+            "path": "orion-server.tar.gz",
+            "name": "orion-server-${nextRelease.gitTag}.tar.gz",
+            "label": "Back-end build (Node.js)"
+          },
+          {
+            "path": "orion-client.tar.gz",
+            "name": "orion-client-${nextRelease.gitTag}.tar.gz",
+            "label": "Front-end build (React)"
+          }
+        ],
+        "successComment": false,
+        "failComment": false,
+        "releasedLabels": false
+      }
+    ]
+  ]
+}
