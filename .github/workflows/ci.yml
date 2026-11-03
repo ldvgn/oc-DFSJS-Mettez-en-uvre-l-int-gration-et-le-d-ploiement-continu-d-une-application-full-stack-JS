@@ -1,4 +1,5 @@
-# Based on the GitHub "Node.js CI" template, adapted to build and test client and server separately
+# Based on the GitHub "Node.js CI" template, adapted to build and test client and server separately,
+# then publish their Docker images to ghcr.io on push to main
 # For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-nodejs
 
 name: Node.js CI
@@ -72,3 +73,36 @@ jobs:
             -Dsonar.test.inclusions=**/*.test.ts,**/*.test.tsx
             -Dsonar.exclusions=**/*.test.ts,**/*.test.tsx
             -Dsonar.qualitygate.wait=true
+
+  publish:
+    needs: [server, client, sonar] # only if build, tests and SonarQube passed
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' # only on push to main
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write # needed to push images to ghcr.io
+
+    steps:
+      - uses: actions/checkout@v7
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v4.7.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and push server image
+        uses: docker/build-push-action@v7.4.0
+        with:
+          context: ./server
+          push: true
+          tags: |
+            ghcr.io/ldvgn/orion-server:latest
+            ghcr.io/ldvgn/orion-server:${{ github.sha }}
+      - name: Build and push client image
+        uses: docker/build-push-action@v7.4.0
+        with:
+          context: ./client
+          push: true
+          tags: |
+            ghcr.io/ldvgn/orion-client:latest
+            ghcr.io/ldvgn/orion-client:${{ github.sha }}
