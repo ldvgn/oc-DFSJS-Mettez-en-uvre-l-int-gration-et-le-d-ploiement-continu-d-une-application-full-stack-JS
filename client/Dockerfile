@@ -7,7 +7,7 @@ COPY . .
 RUN npm run build
 
 # Stage 2: serve static files with Nginx
-FROM nginx:alpine
+FROM nginx:alpine-slim
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=builder /app/dist /usr/share/nginx/html
 EXPOSE 80
