@@ -19,8 +19,8 @@ This project follows a monorepo structure with separate frontend and backend app
 ### 1. Clone the repository
 
 ```bash
-git clone <repository-url>
-cd p7-dfsjs
+git clone https://github.com/ldvgn/oc-DFSJS-Mettez-en-uvre-l-int-gration-et-le-d-ploiement-continu-d-une-application-full-stack-JS.git
+cd oc-DFSJS-Mettez-en-uvre-l-int-gration-et-le-d-ploiement-continu-d-une-application-full-stack-JS
 ```
 
 ### 2. Install backend dependencies
@@ -80,6 +80,56 @@ npm run dev
 
 The application will be available at `http://localhost:4200`
 
+## Running with Docker
+
+Prerequisite: Docker Desktop (or Docker Engine with the Compose plugin).
+
+### Option 1: use the published images (no build)
+
+```bash
+docker compose pull
+docker compose up -d
+```
+
+### Option 2: build the images locally
+
+```bash
+docker compose up -d --build
+```
+
+| Service | URL | Image |
+|---------|-----|-------|
+| Frontend (Nginx) | http://localhost:4200 | `ghcr.io/ldvgn/orion-client:latest` |
+| Backend (API) | http://localhost:8080/api/health | `ghcr.io/ldvgn/orion-server:latest` |
+
+The SQLite database is stored in the `db-data` Docker volume and is kept between restarts.
+
+Stop the application:
+
+```bash
+docker compose down
+```
+
+## CI/CD (GitHub Actions)
+
+| Workflow | File | Triggered on | What it does |
+|----------|------|--------------|--------------|
+| Node.js CI | `.github/workflows/ci.yml` | push and pull request on `main`, every Monday at 6 a.m. UTC | Builds and tests the server and the client, runs the SonarQube Cloud analysis, then publishes the Docker images to GHCR (push on `main` only) |
+| Release | `.github/workflows/release.yml` | after a successful CI run on `main` | Computes the next version from the commit messages (semantic-release) and creates a GitHub release with the build archives |
+
+### Configuration
+
+| Secret | Where | Purpose |
+|--------|-------|---------|
+| `SONAR_TOKEN` | Settings > Secrets and variables > Actions | Authenticates the SonarQube Cloud analysis |
+
+`GITHUB_TOKEN` is provided automatically by GitHub (image publication and releases).
+
+### Versioning
+
+Commit messages follow [Conventional Commits](https://www.conventionalcommits.org/):
+`fix:` creates a patch version, `feat:` a minor version, `BREAKING CHANGE` a major version.
+
 ## Available Scripts
 
 ### Backend (server/)
@@ -104,7 +154,9 @@ The application will be available at `http://localhost:4200`
 ## Project Structure
 
 ```
-p7-dfsjs-starter/
+orion/
+├── .github/workflows/      # ci.yml, release.yml
+├── docker-compose.yml      # Runs the client and the server
 ├── client/                 # Frontend React application
 │   ├── src/
 │   │   ├── components/    # Reusable React components
