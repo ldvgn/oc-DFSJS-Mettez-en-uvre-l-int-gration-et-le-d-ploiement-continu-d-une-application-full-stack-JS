@@ -1,76 +1,113 @@
-import { Request, Response } from 'express';
-import { organizationService } from '../services/organizationService';
-import { CreateOrganizationSchema, UpdateOrganizationSchema } from '../models/organizationModel';
+import { Request, Response } from "express";
+import { handleError, logRequest } from "../utils/logger";
+import { organizationService } from "../services/organizationService";
+import {
+  CreateOrganizationSchema,
+  UpdateOrganizationSchema,
+} from "../models/organizationModel";
 
 export const organizationController = {
-  async getAll(_req: Request, res: Response): Promise<void> {
+  async getAll(req: Request, res: Response): Promise<void> {
     try {
       const organizations = await organizationService.getAllOrganizations();
+      logRequest("info", "Organizations fetched", req, res, 200, {
+        count: organizations.length,
+      });
       res.json(organizations);
-    } catch (_error) {
-      res.status(500).json({ error: 'Failed to fetch organizations' });
+    } catch (error) {
+      handleError(error, req, res, {
+        failure: "Failed to fetch organizations",
+      });
     }
   },
 
   async getById(req: Request, res: Response): Promise<void> {
+    const { id } = req.params;
     try {
-      const { id } = req.params;
       const organization = await organizationService.getOrganizationById(id);
+      logRequest("info", "Organization fetched", req, res, 200, { id });
       res.json(organization);
     } catch (error) {
-      if (error instanceof Error && error.message === 'Organization not found') {
-        res.status(404).json({ error: 'Organization not found' });
-      } else {
-        res.status(500).json({ error: 'Failed to fetch organization' });
-      }
+      handleError(
+        error,
+        req,
+        res,
+        {
+          notFound: "Organization not found",
+          failure: "Failed to fetch organization",
+        },
+        { id },
+      );
     }
   },
 
   async create(req: Request, res: Response): Promise<void> {
     try {
       const validatedData = CreateOrganizationSchema.parse(req.body);
-      const organization = await organizationService.createOrganization(validatedData);
+      const organization =
+        await organizationService.createOrganization(validatedData);
+      logRequest("info", "Organization created", req, res, 201, {
+        id: organization.id,
+      });
       res.status(201).json(organization);
-    } catch (_error) {
-      res.status(400).json({ error: 'Invalid input data' });
+    } catch (error) {
+      handleError(error, req, res, {
+        failure: "Failed to create organization",
+      });
     }
   },
 
   async update(req: Request, res: Response): Promise<void> {
+    const { id } = req.params;
     try {
-      const { id } = req.params;
       const validatedData = UpdateOrganizationSchema.parse(req.body);
-      const organization = await organizationService.updateOrganization(id, validatedData);
+      const organization = await organizationService.updateOrganization(
+        id,
+        validatedData,
+      );
+      logRequest("info", "Organization updated", req, res, 200, { id });
       res.json(organization);
     } catch (error) {
-      if (error instanceof Error && error.message === 'Organization not found') {
-        res.status(404).json({ error: 'Organization not found' });
-      } else {
-        res.status(400).json({ error: 'Invalid input data' });
-      }
+      handleError(
+        error,
+        req,
+        res,
+        {
+          notFound: "Organization not found",
+          failure: "Failed to update organization",
+        },
+        { id },
+      );
     }
   },
 
   async delete(req: Request, res: Response): Promise<void> {
+    const { id } = req.params;
     try {
-      const { id } = req.params;
       await organizationService.deleteOrganization(id);
+      logRequest("info", "Organization deleted", req, res, 204, { id });
       res.status(204).send();
     } catch (error) {
-      if (error instanceof Error && error.message === 'Organization not found') {
-        res.status(404).json({ error: 'Organization not found' });
-      } else {
-        res.status(500).json({ error: 'Failed to delete organization' });
-      }
+      handleError(
+        error,
+        req,
+        res,
+        {
+          notFound: "Organization not found",
+          failure: "Failed to delete organization",
+        },
+        { id },
+      );
     }
   },
 
-  async getStats(_req: Request, res: Response): Promise<void> {
+  async getStats(req: Request, res: Response): Promise<void> {
     try {
       const stats = await organizationService.getOrganizationStats();
+      logRequest("info", "Organization stats fetched", req, res, 200);
       res.json(stats);
-    } catch (_error) {
-      res.status(500).json({ error: 'Failed to fetch stats' });
+    } catch (error) {
+      handleError(error, req, res, { failure: "Failed to fetch stats" });
     }
   },
 };

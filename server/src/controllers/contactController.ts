@@ -1,28 +1,38 @@
-import { Request, Response } from 'express';
-import { contactService } from '../services/contactService';
-import { CreateContactSchema, UpdateContactSchema } from '../models/contactModel';
+import { Request, Response } from "express";
+import { handleError, logRequest } from "../utils/logger";
+import { contactService } from "../services/contactService";
+import {
+  CreateContactSchema,
+  UpdateContactSchema,
+} from "../models/contactModel";
 
 export const contactController = {
-  async getAll(_req: Request, res: Response): Promise<void> {
+  async getAll(req: Request, res: Response): Promise<void> {
     try {
       const contacts = await contactService.getAllContacts();
+      logRequest("info", "Contacts fetched", req, res, 200, {
+        count: contacts.length,
+      });
       res.json(contacts);
-    } catch (_error) {
-      res.status(500).json({ error: 'Failed to fetch contacts' });
+    } catch (error) {
+      handleError(error, req, res, { failure: "Failed to fetch contacts" });
     }
   },
 
   async getById(req: Request, res: Response): Promise<void> {
+    const { id } = req.params;
     try {
-      const { id } = req.params;
       const contact = await contactService.getContactById(id);
+      logRequest("info", "Contact fetched", req, res, 200, { id });
       res.json(contact);
     } catch (error) {
-      if (error instanceof Error && error.message === 'Contact not found') {
-        res.status(404).json({ error: 'Contact not found' });
-      } else {
-        res.status(500).json({ error: 'Failed to fetch contact' });
-      }
+      handleError(
+        error,
+        req,
+        res,
+        { notFound: "Contact not found", failure: "Failed to fetch contact" },
+        { id },
+      );
     }
   },
 
@@ -30,47 +40,55 @@ export const contactController = {
     try {
       const validatedData = CreateContactSchema.parse(req.body);
       const contact = await contactService.createContact(validatedData);
+      logRequest("info", "Contact created", req, res, 201, { id: contact.id });
       res.status(201).json(contact);
-    } catch (_error) {
-      res.status(400).json({ error: 'Invalid input data' });
+    } catch (error) {
+      handleError(error, req, res, { failure: "Failed to create contact" });
     }
   },
 
   async update(req: Request, res: Response): Promise<void> {
+    const { id } = req.params;
     try {
-      const { id } = req.params;
       const validatedData = UpdateContactSchema.parse(req.body);
       const contact = await contactService.updateContact(id, validatedData);
+      logRequest("info", "Contact updated", req, res, 200, { id });
       res.json(contact);
     } catch (error) {
-      if (error instanceof Error && error.message === 'Contact not found') {
-        res.status(404).json({ error: 'Contact not found' });
-      } else {
-        res.status(400).json({ error: 'Invalid input data' });
-      }
+      handleError(
+        error,
+        req,
+        res,
+        { notFound: "Contact not found", failure: "Failed to update contact" },
+        { id },
+      );
     }
   },
 
   async delete(req: Request, res: Response): Promise<void> {
+    const { id } = req.params;
     try {
-      const { id } = req.params;
       await contactService.deleteContact(id);
+      logRequest("info", "Contact deleted", req, res, 204, { id });
       res.status(204).send();
     } catch (error) {
-      if (error instanceof Error && error.message === 'Contact not found') {
-        res.status(404).json({ error: 'Contact not found' });
-      } else {
-        res.status(500).json({ error: 'Failed to delete contact' });
-      }
+      handleError(
+        error,
+        req,
+        res,
+        { notFound: "Contact not found", failure: "Failed to delete contact" },
+        { id },
+      );
     }
   },
 
-  async getStats(_req: Request, res: Response): Promise<void> {
+  async getStats(req: Request, res: Response): Promise<void> {
     try {
       const stats = await contactService.getContactStats();
+      logRequest("info", "Contact stats fetched", req, res, 200);
       res.json(stats);
-    } catch (_error) {
-      res.status(500).json({ error: 'Failed to fetch stats' });
+    } catch (error) {
+      handleError(error, req, res, { failure: "Failed to fetch stats" });
     }
   },
 };
