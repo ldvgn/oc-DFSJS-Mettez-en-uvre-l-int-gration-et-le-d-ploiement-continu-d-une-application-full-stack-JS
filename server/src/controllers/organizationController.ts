@@ -1,6 +1,5 @@
 import { Request, Response } from "express";
-import { ZodError } from "zod";
-import { logRequest } from "../utils/logger";
+import { handleError, logRequest } from "../utils/logger";
 import { organizationService } from "../services/organizationService";
 import {
   CreateOrganizationSchema,
@@ -16,10 +15,9 @@ export const organizationController = {
       });
       res.json(organizations);
     } catch (error) {
-      logRequest("error", "Failed to fetch organizations", req, res, 500, {
-        error: String(error),
+      handleError(error, req, res, {
+        failure: "Failed to fetch organizations",
       });
-      res.status(500).json({ error: "Failed to fetch organizations" });
     }
   },
 
@@ -30,19 +28,16 @@ export const organizationController = {
       logRequest("info", "Organization fetched", req, res, 200, { id });
       res.json(organization);
     } catch (error) {
-      if (
-        error instanceof Error &&
-        error.message === "Organization not found"
-      ) {
-        logRequest("warn", "Organization not found", req, res, 404, { id });
-        res.status(404).json({ error: "Organization not found" });
-      } else {
-        logRequest("error", "Failed to fetch organization", req, res, 500, {
-          id,
-          error: String(error),
-        });
-        res.status(500).json({ error: "Failed to fetch organization" });
-      }
+      handleError(
+        error,
+        req,
+        res,
+        {
+          notFound: "Organization not found",
+          failure: "Failed to fetch organization",
+        },
+        { id },
+      );
     }
   },
 
@@ -56,17 +51,9 @@ export const organizationController = {
       });
       res.status(201).json(organization);
     } catch (error) {
-      if (error instanceof ZodError) {
-        logRequest("warn", "Invalid input data", req, res, 400, {
-          fields: error.issues.map((issue) => issue.path.join(".")),
-        });
-        res.status(400).json({ error: "Invalid input data" });
-      } else {
-        logRequest("error", "Failed to create organization", req, res, 500, {
-          error: String(error),
-        });
-        res.status(500).json({ error: "Failed to create organization" });
-      }
+      handleError(error, req, res, {
+        failure: "Failed to create organization",
+      });
     }
   },
 
@@ -81,25 +68,16 @@ export const organizationController = {
       logRequest("info", "Organization updated", req, res, 200, { id });
       res.json(organization);
     } catch (error) {
-      if (
-        error instanceof Error &&
-        error.message === "Organization not found"
-      ) {
-        logRequest("warn", "Organization not found", req, res, 404, { id });
-        res.status(404).json({ error: "Organization not found" });
-      } else if (error instanceof ZodError) {
-        logRequest("warn", "Invalid input data", req, res, 400, {
-          id,
-          fields: error.issues.map((issue) => issue.path.join(".")),
-        });
-        res.status(400).json({ error: "Invalid input data" });
-      } else {
-        logRequest("error", "Failed to update organization", req, res, 500, {
-          id,
-          error: String(error),
-        });
-        res.status(500).json({ error: "Failed to update organization" });
-      }
+      handleError(
+        error,
+        req,
+        res,
+        {
+          notFound: "Organization not found",
+          failure: "Failed to update organization",
+        },
+        { id },
+      );
     }
   },
 
@@ -110,19 +88,16 @@ export const organizationController = {
       logRequest("info", "Organization deleted", req, res, 204, { id });
       res.status(204).send();
     } catch (error) {
-      if (
-        error instanceof Error &&
-        error.message === "Organization not found"
-      ) {
-        logRequest("warn", "Organization not found", req, res, 404, { id });
-        res.status(404).json({ error: "Organization not found" });
-      } else {
-        logRequest("error", "Failed to delete organization", req, res, 500, {
-          id,
-          error: String(error),
-        });
-        res.status(500).json({ error: "Failed to delete organization" });
-      }
+      handleError(
+        error,
+        req,
+        res,
+        {
+          notFound: "Organization not found",
+          failure: "Failed to delete organization",
+        },
+        { id },
+      );
     }
   },
 
@@ -132,10 +107,7 @@ export const organizationController = {
       logRequest("info", "Organization stats fetched", req, res, 200);
       res.json(stats);
     } catch (error) {
-      logRequest("error", "Failed to fetch organization stats", req, res, 500, {
-        error: String(error),
-      });
-      res.status(500).json({ error: "Failed to fetch stats" });
+      handleError(error, req, res, { failure: "Failed to fetch stats" });
     }
   },
 };
