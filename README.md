@@ -110,6 +110,32 @@ Stop the application:
 docker compose down
 ```
 
+## Monitoring (ELK)
+
+The back-end logs (Winston) and the front-end logs (Nginx) are sent to an ELK stack (Elasticsearch, Logstash, Kibana) and can be viewed in Kibana.
+
+1. Start the ELK stack first, so that no startup log is lost:
+
+   ```bash
+   docker compose -f docker-compose-elk.yml up -d
+   ```
+
+2. Start the application:
+
+   ```bash
+   docker compose up -d
+   ```
+
+3. Open Kibana on http://localhost:5601 (data view `orion-logs-*`).
+
+The ELK stack runs locally only (Elasticsearch security is disabled) and is not part of the CI.
+
+Stop the ELK stack:
+
+```bash
+docker compose -f docker-compose-elk.yml down
+```
+
 ## CI/CD (GitHub Actions)
 
 | Workflow | File | Triggered on | What it does |
@@ -157,6 +183,8 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 orion/
 ├── .github/workflows/      # ci.yml, release.yml
 ├── docker-compose.yml      # Runs the client and the server
+├── docker-compose-elk.yml  # Runs the ELK stack (local monitoring)
+├── logstash.conf           # Logstash pipeline (back-end and front-end logs)
 ├── client/                 # Frontend React application
 │   ├── src/
 │   │   ├── components/    # Reusable React components
@@ -237,6 +265,7 @@ orion/
 - **Prisma**: Modern ORM
 - **SQLite**: Development database
 - **Zod**: Runtime type validation
+- **Winston**: Structured JSON logs
 - **Vitest**: Testing framework
 
 ## Development Guidelines
